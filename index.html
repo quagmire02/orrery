@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Orrery</title>
+<meta name="description" content="Map the papers around your research question as a solar system — see what's close, what's connected, and where the gaps are.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Big+Shoulders+Display:wght@700;800&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<canvas id="sky" aria-label="Your papers arranged as a solar system around your research question"></canvas>
+
+<header class="top">
+  <div class="brand">Orrery</div>
+  <button id="question" class="question" type="button">
+    <span class="eyebrow">Research question</span>
+    <span id="q-text"></span>
+  </button>
+  <p id="demo-note" class="demo-note" hidden>Sample system <button id="start-own" type="button">Start your own</button></p>
+</header>
+
+<p id="empty" class="empty" hidden>Add papers by link, DOI, title or PDF — they'll settle into orbit by how close they sit to your question.</p>
+
+<div id="tip" class="tip" hidden></div>
+
+<aside id="panel" class="panel" hidden>
+  <button id="panel-close" class="close" type="button" aria-label="Close panel">&times;</button>
+  <div id="panel-body"></div>
+</aside>
+
+<nav class="dock" aria-label="Controls">
+  <button id="btn-add" class="primary" type="button">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    <span>Add papers</span>
+  </button>
+  <div class="seg" role="group" aria-label="Orbit by">
+    <button data-view="relevance" type="button">Relevance</button>
+    <button data-view="fields" type="button">Fields</button>
+  </div>
+  <button id="btn-analyze" type="button" title="Analyze with AI">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 3v5M12 16v5M3 12h5M16 12h5M6.5 6.5l2.3 2.3M15.2 15.2l2.3 2.3M6.5 17.5l2.3-2.3M15.2 8.8l2.3-2.3"/></svg>
+    <span class="lbl" id="analyze-lbl">Analyze</span>
+  </button>
+  <button id="btn-gaps" type="button"><span class="lbl">Gaps</span><span id="gap-count" class="count">0</span></button>
+  <button id="btn-settings" class="icon" type="button" aria-label="Settings">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>
+  </button>
+</nav>
+
+<section id="tour" class="tour" hidden aria-labelledby="tour-title">
+  <div class="tour-card">
+    <div class="tour-top"><span id="tour-step" class="eyebrow"></span><button id="tour-skip" class="tour-skip" type="button">Skip tour</button></div>
+    <h2 id="tour-title"></h2>
+    <p id="tour-text"></p>
+    <div id="tour-art"></div>
+    <div class="tour-nav"><div id="tour-dots" class="dots" aria-hidden="true"></div><button id="tour-back" class="ghost" type="button">Back</button><button id="tour-next" class="primary" type="button">Next</button></div>
+  </div>
+</section>
+
+<p class="nav-hint">Drag to orbit · Scroll to zoom · Click anything to fly to it</p>
+<div id="toast" class="toast" role="status" hidden></div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
