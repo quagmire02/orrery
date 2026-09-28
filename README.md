@@ -6,6 +6,8 @@ Map the papers around your research question as a 3D solar system in deep space.
 
 No accounts and no server. Everything runs and saves in the browser.
 
+*Privacy: the hosted site counts anonymous visits and feature use with [GoatCounter](https://www.goatcounter.com/) (no cookies, no personal data). Your papers, notes and API keys are never sent anywhere except the AI provider you choose.*
+
 ## Use it
 
 - **Add papers:** paste arXiv links, DOIs, Semantic Scholar URLs or plain titles (one per line), or drop in as many PDFs as you like.

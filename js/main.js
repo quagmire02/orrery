@@ -57,7 +57,11 @@ const shortLabel = p => p.authors?.[0] ? `${lastName(p.authors[0])}${p.year ? " 
 const authorLine = p => (p.authors || []).slice(0, 3).join(', ') + ((p.authors || []).length > 3 || p.etal ? ' et al.' : '');
 const closeness = c => c >= 0.66 ? 'Near your study' : c >= 0.33 ? 'Adjacent to your study' : 'Far from your study';
 
+// Anonymous feature counts (GoatCounter). Only the event name is sent, never paper content or keys.
+const track = name => { if (CAPTURE) return; try { window.goatcounter?.count?.({ path: 'event/' + name, title: name, event: true }); } catch { } };
+
 function startOwn(openSun = true) {
+  track('start-own');
   S = blank(); commit();
   if (openSun) open('sun');
 }
@@ -225,7 +229,7 @@ async function run(items, resolve, name = x => x) {
         const p = await resolve(it);
         const have = new Set(S.papers.flatMap(keysOf)), t = p.title.toLowerCase();
         if (keysOf(p).some(k => have.has(k)) || S.papers.some(x => x.title.toLowerCase() === t)) mark(li, 'dup', `Already in your system: ${p.title}`);
-        else { S.papers.push(p); commit(); mark(li, 'ok', p.title); }
+        else { S.papers.push(p); commit(); mark(li, 'ok', p.title); track(resolve === paperFromPdf ? 'pdf-added' : 'paper-added'); }
       } catch (e) { mark(li, 'fail', `${name(it)} — ${e.message}`); }
     }
   };
@@ -246,6 +250,7 @@ function showSettings(note) {
     <label for="base" id="base-l">Base URL</label><input id="base" type="text" value="${esc(cfg.base)}">
     <h3>Your data</h3>
     <p class="hint">Saved in this browser. Export a file to back it up or move it to another device.</p>
+    <p class="hint">Orrery counts anonymous visits and feature use (GoatCounter, no cookies). Your papers, notes and keys are never sent.</p>
     <div class="row"><button type="button" class="plain" id="exp">Export system</button><label class="btn" for="imp">Import</label><input type="file" id="imp" accept=".json,application/json" hidden></div>
     <div class="row"><button type="button" class="plain" id="replay">Replay the tour</button><button type="button" class="plain" id="sample">Load the sample</button><button type="button" class="danger" id="wipe">Start fresh</button></div>`);
   const sync = () => {
@@ -257,12 +262,13 @@ function showSettings(note) {
   const saveCfg = () => { cfg = { provider: $('#prov').value, key: $('#key').value.trim(), model: $('#model').value.trim(), base: $('#base').value.trim() }; store.set('orrery.ai', cfg); sync(); };
   $('#prov').onchange = saveCfg; ['#key', '#model', '#base'].forEach(s => ($(s).oninput = saveCfg)); sync();
   $('#exp').onclick = () => {
+    track('export');
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' }));
     a.download = `orrery-${(S.question || 'system').toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40)}.json`; a.click();
   };
   $('#imp').onchange = async e => {
-    try { const d = JSON.parse(await e.target.files[0].text()); if (!Array.isArray(d.papers)) throw 0; S = { ...blank(), ...d }; commit(); closePanel(); toast(`Imported ${S.papers.length} papers.`); }
+    try { const d = JSON.parse(await e.target.files[0].text()); if (!Array.isArray(d.papers)) throw 0; S = { ...blank(), ...d }; commit(); closePanel(); toast(`Imported ${S.papers.length} papers.`); track('import'); }
     catch { toast("That file isn't an Orrery export."); }
   };
   $('#replay').onclick = () => { closePanel(); tour.start(); };
@@ -280,6 +286,7 @@ async function analyze() {
   if (P.needsKey && !cfg.key) return showSettings('Add an API key to let a model read your papers and find the gaps.');
   const btn = $('#btn-analyze'), lbl = $('#analyze-lbl');
   btn.disabled = true; lbl.textContent = `Reading ${S.papers.length}…`;
+  track('analyze-' + cfg.provider);
   toast(`Reading ${S.papers.length} papers — this can take a minute.`);
   try {
     const r = await runAI(S, cfg), ids = new Set(S.papers.map(p => p.id)), clamp = v => Math.max(0, Math.min(1, +v || 0));
@@ -288,7 +295,8 @@ async function analyze() {
     S.gaps = (r.gaps || []).map((g, i) => ({ id: 'g' + i, title: g.title, detail: g.detail, closeness: clamp(g.closeness), papers: (g.papers || []).filter(x => ids.has(x)) }));
     commit(); showGaps();
     toast(`Mapped ${S.relations.length} connections and ${S.gaps.length} gaps.`);
-  } catch (e) { toast(e.message); }
+    track('analyze-ok');
+  } catch (e) { toast(e.message); track('analyze-failed'); }
   finally { btn.disabled = false; lbl.textContent = 'Analyze'; }
 }
 
@@ -300,7 +308,7 @@ $('#btn-analyze').onclick = analyze;
 $('#question').onclick = () => open('sun');
 $('#start-own').onclick = () => startOwn();
 $('#panel-close').onclick = closePanel;
-document.querySelectorAll('[data-view]').forEach(b => (b.onclick = () => { S.view = b.dataset.view; commit(); }));
+document.querySelectorAll('[data-view]').forEach(b => (b.onclick = () => { S.view = b.dataset.view; commit(); track('view-' + S.view); }));
 $('#panel-body').addEventListener('click', e => {
   const t = e.target.closest('[data-open],[data-gap],[data-gaps],[data-analyze]'); if (!t) return;
   if (t.dataset.open) showPaper(t.dataset.open);
@@ -314,7 +322,7 @@ addEventListener('keydown', e => {
   if (e.key === 'Escape') closePanel();
   if (e.key === ' ') { e.preventDefault(); toast(sky.togglePause() ? 'Orbits paused — press Space to resume.' : 'Orbits resumed.'); }
 });
-const tour = createTour({ sky, getState: () => S, getLinks: () => D.links, onEnd: () => store.set('orrery.toured', true) });
+const tour = createTour({ sky, getState: () => S, getLinks: () => D.links, onEnd: () => { store.set('orrery.toured', true); track('tour-closed'); } });
 refresh();
 if (CAPTURE) window.__app = { sky, open, closePanel, showAdd, showSettings, state: () => S };
 else if (!store.get('orrery.toured', false)) setTimeout(() => { closePanel(); tour.start(); }, 1100);
